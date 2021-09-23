@@ -1,6 +1,8 @@
 package com.example.demo;
 
 import com.github.luben.zstd.Zstd;
+import com.github.luben.zstd.ZstdInputStream;
+import com.github.luben.zstd.ZstdOutputStream;
 import org.apache.commons.io.IOUtils;
 
 import javax.ws.rs.ApplicationPath;
@@ -21,6 +23,24 @@ import java.nio.file.Paths;
 @ApplicationPath("/api")
 public class HelloApplication extends Application {
     public static void main(String[] args) throws IOException {
+
+
+        // comparess way #1 with stream (mutli thread available)
+        {
+            InputStream is = HelloApplication.class.getResourceAsStream("/1sample.txt");
+            String s = IOUtils.toString(is, Charset.defaultCharset());
+//            ZstdInputStream zstdInputStream = new ZstdInputStream(is);
+//            zstdInputStream.
+            FileOutputStream fos = new FileOutputStream(new File("/tmp/outoo.csv"));
+            ZstdOutputStream zd = new ZstdOutputStream(fos);
+            zd.setWorkers(6);
+            zd.write(s.getBytes(StandardCharsets.UTF_8));
+            is.close();
+            zd.close();
+        }
+
+
+        // compress #2 use utility
         System.out.println("reading......");
         String s = readFile();
 
@@ -41,6 +61,15 @@ public class HelloApplication extends Application {
 
         System.out.println("DONE");
     } // end main
+
+    private static byte[] readCompressedFile(String compressedFilePath) throws IOException {
+        int size = (int) Files.size(Paths.get(compressedFilePath));
+        InputStream is2 = HelloApplication.class.getResourceAsStream("/compressed.bin");
+        byte[] buffer = new byte[size];
+        IOUtils.read(is2, buffer);
+        is2.close();
+        return buffer;
+    }
 
     private static byte[] readCompressedFile() throws IOException {
         String compressedFilePath = HelloApplication.class.getResource("/compressed.bin").getPath();
